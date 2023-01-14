@@ -14,6 +14,8 @@ async function query(query,db){
          });
     });
 }
+
+
 async function sub_target_type(skill){
     let SQLCode = ""
     let target_type_set_glo = await query(`SELECT * FROM sub_target_type_sets WHERE id=${skill.sub_target_type_set_id}`,db_glo)
@@ -49,12 +51,14 @@ async function causality(condition){
 
 
 }
-async function importPassive(card,name,description,transfo_cond){
+async function importPassive(card){
     let passiveID = card.passive_skill_set_id
     let SQLCode = ""
     let passiveRelations = await query(`SELECT * FROM passive_skill_set_relations WHERE passive_skill_set_id=${passiveID}`,db_jap)
+    let passiveSet = await query(`SELECT * FROM passive_skill_sets WHERE id=${passiveID}`,db_jap)
+    passiveSet = passiveSet[0]
     let param_no = []
-    SQLCode = SQLCode + `INSERT OR REPLACE INTO passive_skill_sets(id,name,description,created_at,updated_at) VALUES(${passiveID},'${name}','${description}','${card.open_at}','${card.updated_at}');\n`
+    SQLCode = SQLCode + `INSERT OR REPLACE INTO passive_skill_sets(id,name,description,created_at,updated_at) VALUES(${passiveSet.id},'${passiveSet.name}','${passiveSet.description}','${card.open_at}','${card.updated_at}');\n`
     let passivesID = []
     for (let index = 0; index < passiveRelations.length; index++) {
         const relation = passiveRelations[index];
@@ -79,10 +83,10 @@ async function importPassive(card,name,description,transfo_cond){
             param_no.push(passiveinJap.eff_value3)
             let transfodesc = await query(`SELECT * FROM transformation_descriptions WHERE skill_id=${passiveinJap.id}`,db_jap)
             transfodesc = transfodesc[0]
-            SQLCode = SQLCode + `INSERT OR REPLACE INTO transformation_descriptions(id,skill_type,skill_id,description,created_at,updated_at) VALUES(${transfodesc.id},'PassiveSkill',${transfodesc.id},'${transfo_cond}','${transfodesc.created_at}','${transfodesc.updated_at}');\n`
+            SQLCode = SQLCode + `INSERT OR REPLACE INTO transformation_descriptions(id,skill_type,skill_id,description,created_at,updated_at) VALUES(${transfodesc.id},'PassiveSkill',${transfodesc.id},'${transfodesc.description}','${transfodesc.created_at}','${transfodesc.updated_at}');\n`
 
         }
-        SQLCode = SQLCode + `INSERT OR REPLACE INTO passive_skills(id,name,description,exec_timing_type,efficacy_type,target_type,sub_target_type_set_id,passive_skill_effect_id,calc_option,turn,is_once,probability,causality_conditions,eff_value1,eff_value2,eff_value3,created_at,updated_at) VALUES(${passiveinJap.id},'${name}','${passiveinJap.description}',${passiveinJap.exec_timing_type},${passiveinJap.efficacy_type},${passiveinJap.target_type},${passiveinJap.sub_target_type_set_id},${passiveinJap.passive_skill_effect_id},${passiveinJap.calc_option},${passiveinJap.turn},${passiveinJap.is_once},${passiveinJap.probability},${passiveinJap.causality_conditions},${passiveinJap.eff_value1},${passiveinJap.eff_value2},${passiveinJap.eff_value3},'${passiveinJap.created_at}','${passiveinJap.updated_at}');\n`
+        SQLCode = SQLCode + `INSERT OR REPLACE INTO passive_skills(id,name,description,exec_timing_type,efficacy_type,target_type,sub_target_type_set_id,passive_skill_effect_id,calc_option,turn,is_once,probability,causality_conditions,eff_value1,eff_value2,eff_value3,created_at,updated_at) VALUES(${passiveinJap.id},'${passiveinJap.name}','${passiveinJap.description}',${passiveinJap.exec_timing_type},${passiveinJap.efficacy_type},${passiveinJap.target_type},${passiveinJap.sub_target_type_set_id},${passiveinJap.passive_skill_effect_id},${passiveinJap.calc_option},${passiveinJap.turn},${passiveinJap.is_once},${passiveinJap.probability},${passiveinJap.causality_conditions},${passiveinJap.eff_value1},${passiveinJap.eff_value2},${passiveinJap.eff_value3},'${passiveinJap.created_at}','${passiveinJap.updated_at}');\n`
         if (passiveinJap.sub_target_type_set_id !== 0 && !applied_targets.includes(passiveinJap.sub_target_type_set_id)){
             SQLCode = SQLCode + await sub_target_type(passiveinJap)
         }
@@ -105,7 +109,9 @@ async function importPassive(card,name,description,transfo_cond){
 }
 async function importLeader(card,name,description){
     let SQLCode = ""
-    SQLCode = SQLCode + `INSERT OR REPLACE INTO leader_skill_sets(id,name,description,created_at,updated_at) VALUES(${card.leader_skill_set_id},'${name}','${description}','${card.created_at}','${card.updated_at}');\n`
+    let LS_jap = await query(`SELECT * FROM leader_skill_sets WHERE id=${card.leader_skill_set_id}`,db_jap)
+    LS_jap = LS_jap[0]
+    SQLCode = SQLCode + `INSERT OR REPLACE INTO leader_skill_sets(id,name,description,created_at,updated_at) VALUES(${card.leader_skill_set_id},'${LS_jap.name}','${LS_jap.description}','${card.created_at}','${card.updated_at}');\n`
     let leaderSkill_r = await query(`SELECT * FROM leader_skills WHERE leader_skill_set_id=${card.leader_skill_set_id}`,db_jap)
     for (let index = 0; index < leaderSkill_r.length; index++) {
         const skill = leaderSkill_r[index];
@@ -124,7 +130,7 @@ async function importLeader(card,name,description){
     }
     return SQLCode
 }
-async function importSAs(card,translatedcard,appliedSAs,viewIDS){
+async function importSAs(card,appliedSAs,viewIDS){
         const apply = []
         let SQLCode = ""
         let SAs = await query(`SELECT * FROM card_specials WHERE card_id=${card.id}`,db_jap)
@@ -133,23 +139,6 @@ async function importSAs(card,translatedcard,appliedSAs,viewIDS){
         for (let index = 0; index < SAs.length; index++) {
             const SA = SAs[index];
             if (appliedSAs.includes(SA.special_set_id)) continue;
-                if (SA.style === "Hyper"){
-                    var SAtrans = translatedcard.SAs_Ultime[index_hyper]
-                    index_hyper++
-                }
-                if (SA.style === "Normal"){
-                    if (SA.lv_start === 14 || SA.lv_start === 19){
-                        var SAtrans = translatedcard.SAs[0]
-                        index_normal++
-                    } else {
-                        var SAtrans = translatedcard.SAs[index_normal]
-                        index_normal++
-                    }
-                    
-                }
-                if (SA.style === "Condition"){
-                        var SAtrans = translatedcard.SAs[index]
-                }
                 apply.push(SA.special_set_id)
                 var causality_conditions = null
                 var special_asset_id = null
@@ -165,9 +154,9 @@ async function importSAs(card,translatedcard,appliedSAs,viewIDS){
                 viewIDS.push(SA.view_id)
                 let specialSet = await query(`SELECT * FROM special_sets WHERE id=${SA.special_set_id}`,db_jap)
                 specialSet = specialSet[0]
-                if (SAtrans.condition !== null) var condition = `'${SAtrans.condition}'`
+                if (SA.causality_conditions !== null) var condition = `'${SA.causality_conditions}'`
                 else var condition = null
-                SQLCode = SQLCode + `INSERT OR REPLACE INTO special_sets(id,name,description,causality_description,aim_target,increase_rate,lv_bonus,created_at,updated_at) VALUES(${specialSet.id},'${SAtrans.name}','${SAtrans.effect}',${condition},${specialSet.aim_target},${specialSet.increase_rate},${specialSet.lv_bonus},'${specialSet.created_at}','${specialSet.updated_at}');\n`
+                SQLCode = SQLCode + `INSERT OR REPLACE INTO special_sets(id,name,description,causality_description,aim_target,increase_rate,lv_bonus,created_at,updated_at) VALUES(${specialSet.id},'${specialSet.name}','${specialSet.description}',${condition},${specialSet.aim_target},${specialSet.increase_rate},${specialSet.lv_bonus},'${specialSet.created_at}','${specialSet.updated_at}');\n`
                 let specials = await query(`SELECT * FROM specials WHERE special_set_id=${SA.special_set_id}`,db_jap)
                 for (let index = 0; index < specials.length; index++) {
                     const special = specials[index];
@@ -258,11 +247,11 @@ async function importUniqueInfos(card){
     unikinfo_jap = unikinfo_jap[0]
     if (unikinfo_glo.length === 0){
         SQLCODE = SQLCODE + `INSERT OR REPLACE INTO card_unique_infos(id,name,kana,created_at,updated_at) VALUES(${unikinfo_jap.id},'${unikinfo_jap.name}','${unikinfo_jap.kana}','${unikinfo_jap.created_at}','${unikinfo_jap.updated_at}');\n` 
-        let unikinfo_relation= await query(`SELECT * FROM card_unique_info_set_relations WHERE card_unique_info_id=${unikinfo_jap.id}`,db_jap)
-        for (let index = 0; index < unikinfo_relation.length; index++) {
-            const unikinfon = unikinfo_relation[index];
-            SQLCODE = SQLCODE + `INSERT OR REPLACE INTO card_unique_info_set_relations(id,card_unique_info_id,card_unique_info_set_id,created_at,updated_at) VALUES(${unikinfon.id},${unikinfon.card_unique_info_id},${unikinfon.card_unique_info_set_id},'${unikinfon.created_at}','${unikinfon.updated_at}');\n` 
-        }
+    }
+    let unikinfo_relation = await query(`SELECT * FROM card_unique_info_set_relations WHERE card_unique_info_id=${unikinfo_jap.id}`,db_jap)
+    for (let index = 0; index < unikinfo_relation.length; index++) {
+        const unikinfon = unikinfo_relation[index];
+        SQLCODE = SQLCODE + `INSERT OR REPLACE INTO card_unique_info_set_relations(id,card_unique_info_id,card_unique_info_set_id,created_at,updated_at) VALUES(${unikinfon.id},${unikinfon.card_unique_info_id},${unikinfon.card_unique_info_set_id},'${unikinfon.created_at}','${unikinfon.updated_at}');\n` 
     }
     return SQLCODE
         
