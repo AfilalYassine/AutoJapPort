@@ -161,14 +161,14 @@ async function tradAll(whitelist){
         const lastDigit1Num = Number(lastDigit1Str);
         fs.appendFileSync('./japan_port.sql', `INSERT OR REPLACE INTO cards(id,name,character_id,card_unique_info_id,cost,rarity,hp_init,hp_max,atk_init,atk_max,def_init,def_max,element,lv_max,skill_lv_max,grow_type,optimal_awakening_grow_type,price,exp_type,training_exp,special_motion,passive_skill_set_id,leader_skill_set_id,link_skill1_id,link_skill2_id,link_skill3_id,link_skill4_id,link_skill5_id,link_skill6_id,link_skill7_id,eball_mod_min,eball_mod_num100,eball_mod_mid,eball_mod_mid_num,eball_mod_max,eball_mod_max_num,max_level_reward_id,max_level_reward_type,collectable_type,face_x,face_y,aura_id,aura_scale,aura_offset_x,aura_offset_y,is_aura_front,is_selling_only,awakening_number,resource_id,bg_effect_id,selling_exchange_point,awakening_element_type,potential_board_id,open_at,created_at,updated_at) VALUES(${card.id},'${card.name}',${card.character_id},${card.card_unique_info_id},${card.cost},${card.rarity},${card.hp_init},${card.hp_max},${card.atk_init},${card.atk_max},${card.def_init},${card.def_max},${card.element},${card.lv_max},${card.skill_lv_max},${card.grow_type},${card.optimal_awakening_grow_type},${card.price},${card.exp_type},${card.training_exp},${card.special_motion},${card.passive_skill_set_id},${card.leader_skill_set_id},${card.link_skill1_id},${card.link_skill2_id},${card.link_skill3_id},${card.link_skill4_id},${card.link_skill5_id},${card.link_skill6_id},${card.link_skill7_id},${card.eball_mod_min},${card.eball_mod_num100},${card.eball_mod_mid},${card.eball_mod_mid_num},${card.eball_mod_max},${card.eball_mod_max_num},${card.max_level_reward_id},${card.max_level_reward_type},${card.collectable_type},${card.face_x},${card.face_y},${card.aura_id},${card.aura_scale},${card.aura_offset_x},${card.aura_offset_y},${card.is_aura_front},${card.is_selling_only},${card.awakening_number},${card.resource_id},${card.bg_effect_id},${card.selling_exchange_point},${card.awakening_element_type},${card.potential_board_id},'${card.open_at}','${card.created_at}','${card.updated_at}');\n`);
         if (!appliedPassives.includes(card.passive_skill_set_id)){
-            let passiveSQL = await passive_skill.importPassive(card)
+            let passiveSQL = await passive_skill.importPassive(card,card.passive_skill_set_id)
             param_no = param_no.concat(passiveSQL.param_no)
             fs.appendFileSync('./japan_port.sql', passiveSQL.SQLCode);
             appliedPassives.push(card.passive_skill_set_id)
         }
 
         if (!appliedLeaders.includes(card.leader_skill_set_id)){
-            let leaderSQL = await passive_skill.importLeader(card)
+            let leaderSQL = await passive_skill.importLeader(card,card.leader_skill_set_id)
             fs.appendFileSync('./japan_port.sql', leaderSQL);
             appliedLeaders.push(card.leader_skill_set_id)
         }
@@ -282,6 +282,7 @@ async function ZTURAll(whitelist){
                 passiveSkills.push(awakening.passive_skill_set_id)
             } 
         }
+        console.log(passiveSkills)
 
         for (let index = 0; index < passiveSkills.length; index++) {
             const passif_id = passiveSkills[index];
@@ -291,7 +292,7 @@ async function ZTURAll(whitelist){
             let passif_jap = await query(`SELECT * FROM passive_skill_sets WHERE id=${passif_id}`,db_jap)
             passif_jap = passif_jap[0]
             if (passif_glo.length > 0) continue;
-            fs.appendFileSync('./eza_port.sql', (await passive_skill.importPassive(card)).SQLCode);
+            fs.appendFileSync('./eza_port.sql', (await passive_skill.importPassive(card,passif_id)).SQLCode);
             
 
         }
@@ -302,7 +303,7 @@ async function ZTURAll(whitelist){
             let leader_jap = await query(`SELECT * FROM leader_skill_sets WHERE id=${leader_id}`,db_jap)
             leader_jap = leader_jap[0]
             if (leader_glo.length > 0) continue;
-            fs.appendFileSync('./eza_port.sql', await passive_skill.importLeader(card));
+            fs.appendFileSync('./eza_port.sql', await passive_skill.importLeader(card,leader_id));
         }
         let spes_0 = await query(`SELECT * FROM card_specials WHERE card_id=${card.id - 1}`,db_jap)
         let spes_1 = await query(`SELECT * FROM card_specials WHERE card_id=${card.id}`,db_jap)

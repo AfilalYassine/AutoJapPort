@@ -51,8 +51,7 @@ async function causality(condition){
 
 
 }
-async function importPassive(card){
-    let passiveID = card.passive_skill_set_id
+async function importPassive(card,passiveID){
     let SQLCode = ""
     let passiveRelations = await query(`SELECT * FROM passive_skill_set_relations WHERE passive_skill_set_id=${passiveID}`,db_jap)
     let passiveSet = await query(`SELECT * FROM passive_skill_sets WHERE id=${passiveID}`,db_jap)
@@ -107,12 +106,12 @@ async function importPassive(card){
 
     
 }
-async function importLeader(card,name,description){
+async function importLeader(card,leaderID){
     let SQLCode = ""
-    let LS_jap = await query(`SELECT * FROM leader_skill_sets WHERE id=${card.leader_skill_set_id}`,db_jap)
+    let LS_jap = await query(`SELECT * FROM leader_skill_sets WHERE id=${leaderID}`,db_jap)
     LS_jap = LS_jap[0]
-    SQLCode = SQLCode + `INSERT OR REPLACE INTO leader_skill_sets(id,name,description,created_at,updated_at) VALUES(${card.leader_skill_set_id},'${LS_jap.name}','${LS_jap.description}','${card.created_at}','${card.updated_at}');\n`
-    let leaderSkill_r = await query(`SELECT * FROM leader_skills WHERE leader_skill_set_id=${card.leader_skill_set_id}`,db_jap)
+    SQLCode = SQLCode + `INSERT OR REPLACE INTO leader_skill_sets(id,name,description,created_at,updated_at) VALUES(${leaderID},'${LS_jap.name}','${LS_jap.description}','${card.created_at}','${card.updated_at}');\n`
+    let leaderSkill_r = await query(`SELECT * FROM leader_skills WHERE leader_skill_set_id=${leaderID}`,db_jap)
     for (let index = 0; index < leaderSkill_r.length; index++) {
         const skill = leaderSkill_r[index];
         if (typeof skill.causality_conditions === "string") {
