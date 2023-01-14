@@ -430,7 +430,7 @@ async function main(){
         return main()
     }
 
-    if (choice === cards_wl){
+    if (choice === text.cards_wl){
         let rawdata = fs.readFileSync('config.json');
         rawdata = JSON.parse(rawdata);
         whitelist = rawdata.whitelist
