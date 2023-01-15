@@ -65,7 +65,7 @@ async function importPassive(card,passiveID){
         passivesID.push(relation.passive_skill_id)
     }
     
-
+    var transfodesc = null
     for (let index = 0; index < passivesID.length; index++) {
         const passive = passivesID[index];
         let passiveinJap = await query(`SELECT * FROM passive_skills WHERE id=${passive}`,db_jap)
@@ -80,7 +80,7 @@ async function importPassive(card,passiveID){
         } 
         if (passiveinJap.efficacy_type === 103) {
             param_no.push(passiveinJap.eff_value3)
-            let transfodesc = await query(`SELECT * FROM transformation_descriptions WHERE skill_id=${passiveinJap.id}`,db_jap)
+            transfodesc = await query(`SELECT * FROM transformation_descriptions WHERE skill_id=${passiveinJap.id}`,db_jap)
             transfodesc = transfodesc[0]
             SQLCode = SQLCode + `INSERT OR REPLACE INTO transformation_descriptions(id,skill_type,skill_id,description,created_at,updated_at) VALUES(${transfodesc.id},'PassiveSkill',${transfodesc.id},'${transfodesc.description}','${transfodesc.created_at}','${transfodesc.updated_at}');\n`
 
@@ -101,7 +101,8 @@ async function importPassive(card,passiveID){
     }
     return {
         SQLCode: SQLCode,
-        param_no: param_no
+        param_no: param_no,
+        transfo: transfodesc
     }
 
     

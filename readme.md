@@ -2,18 +2,17 @@
 Automatically port data from the Japanese Dokkan Database to a SQL patch applicable to the Global Dokkan Database.
 
 # Currently includes : 
-- Automatic Translation (thanks to https://dokkaninfo.com/)
 - Whitelist and blacklist system
-- Automatic port of JP cards by comparing the two databases
-- Automatic port of JP EZAs by comparing the two databases
+- Automatic port of JP cards by comparing the two databases*
+- Automatic port of JP EZAs by comparing the two databases*
 - misc.sql file with the following tables : card_awakening_sets,effect_packs
-- French GUI
+- French and English GUI
+- SQL translations mockup files to easily know what you need to translate
 
 # Coming soon : 
 - Automatic items/awakening items port
 - Assets port
-- Support of other languages (such as French) for translations
-- Support of other languages (English, Spanish) for GUI
+- Automatic Translations in English and French
 
 # Contact 
 Discord : discord.gg/dokkanfr
