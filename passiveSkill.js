@@ -138,9 +138,7 @@ async function importSAs(card,appliedSAs,viewIDS){
         let index_hyper = 0
         for (let index = 0; index < SAs.length; index++) {
             const SA = SAs[index];
-            if (appliedSAs.includes(SA.special_set_id)) continue;
-                apply.push(SA.special_set_id)
-                var causality_conditions = null
+            var causality_conditions = null
                 var special_asset_id = null
                 if (SA.special_asset_id !== null) special_asset_id = SA.special_asset_id
                 if (SA.causality_conditions !== null) {
@@ -150,20 +148,23 @@ async function importSAs(card,appliedSAs,viewIDS){
                     applied_causality.push(causality_conditions)  
                     }
                 }
-                SQLCode = SQLCode + `INSERT OR REPLACE INTO card_specials(id,card_id,special_set_id,priority,style,lv_start,eball_num_start,view_id,card_costume_condition_id,special_bonus_id1,special_bonus_lv1,bonus_view_id1,special_bonus_id2,special_bonus_lv2,bonus_view_id2,causality_conditions,special_asset_id,created_at,updated_at) VALUES(${SA.id},${SA.card_id},${SA.special_set_id},${SA.priority},'${SA.style}',${SA.lv_start},${SA.eball_num_start},${SA.view_id},${SA.card_costume_condition_id},${SA.special_bonus_id1},${SA.special_bonus_lv1},${SA.bonus_view_id1},${SA.special_bonus_id2},${SA.special_bonus_lv2},${SA.bonus_view_id2},${causality_conditions},${special_asset_id},'${SA.created_at}','${SA.updated_at}');\n`
-                viewIDS.push(SA.view_id)
-                let specialSet = await query(`SELECT * FROM special_sets WHERE id=${SA.special_set_id}`,db_jap)
-                specialSet = specialSet[0]
                 if (SA.causality_conditions !== null) var condition = `'${SA.causality_conditions}'`
                 else var condition = null
+            SQLCode = SQLCode + `INSERT OR REPLACE INTO card_specials(id,card_id,special_set_id,priority,style,lv_start,eball_num_start,view_id,card_costume_condition_id,special_bonus_id1,special_bonus_lv1,bonus_view_id1,special_bonus_id2,special_bonus_lv2,bonus_view_id2,causality_conditions,special_asset_id,created_at,updated_at) VALUES(${SA.id},${SA.card_id},${SA.special_set_id},${SA.priority},'${SA.style}',${SA.lv_start},${SA.eball_num_start},${SA.view_id},${SA.card_costume_condition_id},${SA.special_bonus_id1},${SA.special_bonus_lv1},${SA.bonus_view_id1},${SA.special_bonus_id2},${SA.special_bonus_lv2},${SA.bonus_view_id2},${causality_conditions},${special_asset_id},'${SA.created_at}','${SA.updated_at}');\n` 
+            viewIDS.push(SA.view_id)   
+            if (appliedSAs.includes(SA.special_set_id)) continue;
+                apply.push(SA.special_set_id)
+                let specialSet = await query(`SELECT * FROM special_sets WHERE id=${SA.special_set_id}`,db_jap)
+                specialSet = specialSet[0]
                 SQLCode = SQLCode + `INSERT OR REPLACE INTO special_sets(id,name,description,causality_description,aim_target,increase_rate,lv_bonus,created_at,updated_at) VALUES(${specialSet.id},'${specialSet.name}','${specialSet.description}',${condition},${specialSet.aim_target},${specialSet.increase_rate},${specialSet.lv_bonus},'${specialSet.created_at}','${specialSet.updated_at}');\n`
                 let specials = await query(`SELECT * FROM specials WHERE special_set_id=${SA.special_set_id}`,db_jap)
                 for (let index = 0; index < specials.length; index++) {
                     const special = specials[index];
                     SQLCode = SQLCode + `INSERT OR REPLACE INTO specials(id,special_set_id,type,efficacy_type,target_type,calc_option,turn,prob,causality_conditions,eff_value1,eff_value2,eff_value3,created_at,updated_at) VALUES(${special.id},${special.special_set_id},'${special.type}',${special.efficacy_type},${special.target_type},${special.calc_option},${special.turn},${special.prob},${special.causality_conditions},${special.eff_value1},${special.eff_value2},${special.eff_value3},'${special.created_at}','${special.updated_at}');\n`       
-                }      
+                }  
 
         }
+        
         return {
             SQLCode: SQLCode,
             viewIDS: viewIDS,
@@ -210,6 +211,8 @@ async function importAS(card,as_cond,as_name,as_effect){
     }
         
 }
+
+
 async function importViews(array){
     let SQLCODE = ""
     for (let index = 0; index < array.length; index++) {

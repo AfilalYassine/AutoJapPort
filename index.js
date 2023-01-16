@@ -82,6 +82,7 @@ async function includeEffect_Pack(){
     let effect_pack_jap = await query(`SELECT * FROM effect_packs`,db_jap)
     let difference = []
     fs.writeFileSync('./misc.sql', '');
+
     for (let index = 0; index < effect_pack_jap.length; index++) {
         const element = effect_pack_jap[index];
 
@@ -159,6 +160,7 @@ async function tradAll(whitelist){
     const translateP = []
     const translateA = []
     const translateT = []
+    let appliedViews = []
     async function implementCard(card){
         let param_no = []
         let viewIDS = []
@@ -185,18 +187,17 @@ async function tradAll(whitelist){
             fs.appendFileSync('./japan_port.sql', leaderSQL);
             appliedLeaders.push(card.leader_skill_set_id)
         }
-        if (lastDigit1Num === 1){
-            let SAsImport = await passive_skill.importSAs(card,appliedSAs,viewIDS)
-            fs.appendFileSync('./japan_port.sql', SAsImport.SQLCode)
-            appliedSAs = appliedSAs.concat(SAsImport.appliedSAs)
-            let spes_1 = await query(`SELECT * FROM card_specials WHERE card_id=${card.id}`,db_jap)
-            for (let index = 0; index < spes_1.length; index++) {
-                const element = spes_1[index];
-                SAs.push(element.special_set_id)
+        let SAsImport = await passive_skill.importSAs(card,appliedSAs,viewIDS)
+        fs.appendFileSync('./japan_port.sql', SAsImport.SQLCode)
+        appliedSAs = appliedSAs.concat(SAsImport.appliedSAs)
+        let spes_1 = await query(`SELECT * FROM card_specials WHERE card_id=${card.id}`,db_jap)
+        for (let index = 0; index < spes_1.length; index++) {
+            const element = spes_1[index];
+            SAs.push(element.special_set_id)
                 
-            }
-            viewIDS = viewIDS.concat(SAsImport.viewIDS)
         }
+        viewIDS = viewIDS.concat(SAsImport.viewIDS)
+        
 
         let activeSkill = await query(`SELECT * FROM card_active_skills WHERE card_id=${card.id}`,db_jap)
         if (activeSkill.length > 0){
@@ -209,7 +210,26 @@ async function tradAll(whitelist){
             param_no = param_no.concat(ASimport.param_no)
             activeID = activeSkill.active_skill_set_id
         }
+        
+        for (let index = 0; index < viewIDS.length; index++) {
+            const element = viewIDS[index];
+            if (appliedViews.includes(element)){
+                const x = viewIDS.splice(index, 1);
+            }
+        }
+        function removeDuplicates(arr) {
+            let unique = [];
+            for(i=0; i < arr.length; i++){ 
+                if(unique.indexOf(arr[i]) === -1) { 
+                    unique.push(arr[i]); 
+                } 
+            }
+            return unique;
+        }
+        viewIDS = removeDuplicates(viewIDS)
+        
         fs.appendFileSync('./japan_port.sql',await passive_skill.importViews(viewIDS));
+        appliedViews = appliedViews.concat(viewIDS)
         if (!appliedChara.includes(card.character_id)){
             let charas = await passive_skill.importChara(card,card.name)
             fs.appendFileSync('./japan_port.sql',charas)
@@ -232,7 +252,6 @@ async function tradAll(whitelist){
         fs.appendFileSync('./cards_trad.sql',`-- ${card.name} | ${card.id}\n\n`);
         fs.appendFileSync('./cards_trad.sql',`UPDATE cards SET name = "${card.name}" WHERE id = ${card.id}\n`);
         if (!translateL.includes(leaderID)){
-            console.log(translateL)
             let ls_name = (await query(`SELECT * FROM leader_skill_sets WHERE id=${leaderID}`,db_jap))[0]
             fs.appendFileSync('./cards_trad.sql',`UPDATE leader_skill_sets SET name  = "${ls_name.name}", description = "${ls_name.description}" WHERE id = ${leaderID}\n`);
             translateL.push(leaderID)
@@ -240,7 +259,7 @@ async function tradAll(whitelist){
         if (!translateP.includes(leaderID)){
             let psv_name = (await query(`SELECT * FROM passive_skill_sets WHERE id=${passive_id}`,db_jap))[0]
             fs.appendFileSync('./cards_trad.sql',`UPDATE passive_skill_sets SET name  = "${psv_name.name}", description = "${psv_name.description}" WHERE id = ${passive_id}\n`);
-            translateP.push(leaderID)
+            translateP.push(leaderID) 
         }
         for (let index = 0; index < SAs.length; index++) {
             const element = SAs[index];
